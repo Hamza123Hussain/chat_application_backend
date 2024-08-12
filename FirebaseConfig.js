@@ -7,6 +7,7 @@ import {
   Api,
   appIdmessaging,
   authDomain,
+  messagingSenderId,
   projectId,
   storageBucket,
 } from './Config.js'
