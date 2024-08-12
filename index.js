@@ -8,7 +8,7 @@ const App = express()
 App.use(cors())
 App.use(express.json())
 
-App.use('/api/Register', Router)
+App.use('/api/User', Router)
 
 App.listen(Port, () => {
   console.log(`Running On Port ${Port}`)
