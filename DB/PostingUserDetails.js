@@ -2,34 +2,38 @@ import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth, db, storage } from '../FirebaseConfig.js'
-app.post('/register', async (req, res) => {
-  const { email, password, name, file } = req.body
+import express from 'express'
+
+const Router = express.Router()
+
+Router.post('/', async (req, res) => {
+  const { inputVal } = req.body
 
   try {
     // Create a new user with email and password
     const userCredential = await createUserWithEmailAndPassword(
       auth,
-      email,
-      password
+      inputVal.email,
+      inputVal.password
     )
 
     if (userCredential) {
       let fileURL = ''
 
       // Upload the file to Firebase Storage
-      if (file) {
+      if (inputVal.File) {
         const fileRef = ref(
           storage,
-          `users/${userCredential.user.uid}/${file.name}`
+          `users/${userCredential.user.uid}/${inputVal.File.name}`
         )
-        await uploadBytes(fileRef, file)
+        await uploadBytes(fileRef, inputVal.File)
         fileURL = await getDownloadURL(fileRef)
       }
 
       // Save the user data to Firestore
       await setDoc(doc(db, 'Users', userCredential.user.uid), {
-        Name: name,
-        Email: email,
+        Name: inputVal.Name,
+        Email: inputVal.email,
         id: userCredential.user.uid,
         Blocked: [],
         FileURL: fileURL, // Store the download URL in Firestore
@@ -46,3 +50,5 @@ app.post('/register', async (req, res) => {
     res.status(500).send('Error during registration')
   }
 })
+
+export default Router
