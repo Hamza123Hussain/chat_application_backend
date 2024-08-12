@@ -28,7 +28,7 @@ export const startWebSocketServer = (server) => {
           // Check if the document exists
           if (docSnapshot.exists()) {
             // Retrieve the chat items from the document, or use an empty array if none exist
-            const chatItems = docSnapshot.data().chats || []
+            const chatItems = docSnapshot.data().Chats || []
 
             // Process each chat item to fetch additional user data
             const chatData = await Promise.all(
