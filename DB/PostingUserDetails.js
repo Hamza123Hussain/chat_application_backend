@@ -1,4 +1,7 @@
-import { createUserWithEmailAndPassword } from 'firebase/auth'
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth, db, storage } from '../FirebaseConfig.js'
@@ -6,7 +9,7 @@ import express from 'express'
 
 const Router = express.Router()
 
-Router.post('/', async (req, res) => {
+Router.post('/Register', async (req, res) => {
   const { inputVal } = req.body
 
   try {
@@ -48,6 +51,23 @@ Router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Error during registration:', error)
     res.status(500).send('Error during registration')
+  }
+})
+
+Router.get('/Login', async (req, res) => {
+  const inputVal = req.body
+  try {
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      inputVal.email,
+      inputVal.password
+    )
+    if (userCredential) {
+      res.status(200)
+    }
+  } catch (error) {
+    console.error('Error during Login:', error)
+    res.status(500).send('Error during Login')
   }
 })
 
