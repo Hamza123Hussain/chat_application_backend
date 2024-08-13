@@ -1,3 +1,5 @@
+import express from 'express'
+import multer from 'multer'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -6,8 +8,6 @@ import {
 import { doc, setDoc } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth, db, storage } from '../FirebaseConfig.js'
-import express from 'express'
-import multer from 'multer'
 
 const Router = express.Router()
 
@@ -22,11 +22,8 @@ Router.post('/Register', upload.single('File'), async (req, res) => {
       email,
       password
     )
-
     if (userCredential) {
       let fileURL = ''
-
-      // Upload the file to Firebase Storage
       if (req.file) {
         const fileRef = ref(
           storage,
@@ -35,8 +32,6 @@ Router.post('/Register', upload.single('File'), async (req, res) => {
         await uploadBytes(fileRef, req.file.buffer)
         fileURL = await getDownloadURL(fileRef)
       }
-
-      // Save the user data to Firestore
       await setDoc(doc(db, 'Users', userCredential.user.uid), {
         Name,
         Email: email,
@@ -44,11 +39,7 @@ Router.post('/Register', upload.single('File'), async (req, res) => {
         Blocked: [],
         FileURL: fileURL,
       })
-
-      await setDoc(doc(db, 'Chats', userCredential.user.uid), {
-        Chats: [],
-      })
-
+      await setDoc(doc(db, 'Chats', userCredential.user.uid), { Chats: [] })
       res.status(200).send('User registered successfully')
     }
   } catch (error) {
@@ -57,7 +48,6 @@ Router.post('/Register', upload.single('File'), async (req, res) => {
   }
 })
 
-// Route for user login
 Router.post('/Login', async (req, res) => {
   const { inputVal } = req.body
   try {
@@ -66,9 +56,7 @@ Router.post('/Login', async (req, res) => {
       inputVal.email,
       inputVal.password
     )
-
     if (userCredential) {
-      // Return the user ID upon successful login
       res.status(200).json(userCredential.user.uid)
     }
   } catch (error) {
@@ -79,9 +67,7 @@ Router.post('/Login', async (req, res) => {
 
 Router.post('/SignOut', async (req, res) => {
   try {
-    await signOut(auth) // Sign out the user
-
-    // Send a success response
+    await signOut(auth)
     res.status(200).json({ message: 'Sign-out successful' })
   } catch (error) {
     console.error('Error during signout:', error)
