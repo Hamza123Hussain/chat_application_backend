@@ -13,7 +13,7 @@ const ChatRouter = express.Router()
 
 ChatRouter.post('/', async (req, res) => {
   try {
-    const { UserID } = req.body
+    const { UserID, CurrentUserID } = req.body
 
     // Check if UserID is provided in the request body
     if (!UserID) {
@@ -35,11 +35,19 @@ ChatRouter.post('/', async (req, res) => {
       Chats: arrayUnion({
         chatID: newChatref.id,
         LastMessage: '',
-        receiverId: UserID,
+        receiverId: CurrentUserID,
         UpdatedAt: new Date().toLocaleString(),
       }),
     })
 
+    await updateDoc(doc(Userchatef, CurrentUserID), {
+      Chats: arrayUnion({
+        chatID: newChatref.id,
+        LastMessage: '',
+        receiverId: UserID,
+        UpdatedAt: new Date().toLocaleString(),
+      }),
+    })
     // Send a successful response with the new chat ID
     res
       .status(200)
