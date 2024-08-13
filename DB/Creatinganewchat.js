@@ -3,6 +3,8 @@ import {
   arrayUnion,
   collection,
   doc,
+  getDoc,
+  onSnapshot,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -13,11 +15,11 @@ const ChatRouter = express.Router()
 
 ChatRouter.post('/', async (req, res) => {
   try {
-    const { UserID, CurrentUserID } = req.body
+    const { ChatID, CurrentChatID } = req.body
 
-    // Check if UserID is provided in the request body
-    if (!UserID) {
-      return res.status(400).json({ error: 'UserID is required' })
+    // Check if ChatID is provided in the request body
+    if (!ChatID) {
+      return res.status(400).json({ error: 'ChatID is required' })
     }
 
     const Chatref = collection(db, 'userchats')
@@ -31,20 +33,20 @@ ChatRouter.post('/', async (req, res) => {
     })
 
     // Update the user's chat document with the new chat reference
-    await updateDoc(doc(Userchatef, UserID), {
+    await updateDoc(doc(Userchatef, ChatID), {
       Chats: arrayUnion({
         chatID: newChatref.id,
         LastMessage: '',
-        receiverId: CurrentUserID,
+        receiverId: CurrentChatID,
         UpdatedAt: new Date().toLocaleString(),
       }),
     })
 
-    await updateDoc(doc(Userchatef, CurrentUserID), {
+    await updateDoc(doc(Userchatef, CurrentChatID), {
       Chats: arrayUnion({
         chatID: newChatref.id,
         LastMessage: '',
-        receiverId: UserID,
+        receiverId: ChatID,
         UpdatedAt: new Date().toLocaleString(),
       }),
     })
@@ -55,6 +57,32 @@ ChatRouter.post('/', async (req, res) => {
     console.log('Chat created:', newChatref.id)
   } catch (error) {
     console.error('Error creating chat:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+ChatRouter.get('/Chat', async (req, res) => {
+  try {
+    const ChatID = req.query.ChatID
+    if (!ChatID) {
+      return res.status(400).json({ error: 'ChatID is required' })
+    }
+
+    // Get a reference to the document
+    const chatDocRef = doc(db, 'userchats', ChatID)
+
+    // Fetch the document
+    const chatDocSnap = await getDoc(chatDocRef)
+
+    if (chatDocSnap.exists()) {
+      // Document exists, send it back
+      res.status(200).json(chatDocSnap.data())
+    } else {
+      // Document does not exist
+      res.status(404).json({ error: 'Chat not found' })
+    }
+  } catch (error) {
+    console.error('Error fetching chat data:', error)
     res.status(500).json({ error: 'Internal server error' })
   }
 })
