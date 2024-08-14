@@ -1,6 +1,22 @@
 import { WebSocketServer } from 'ws' // Importing WebSocketServer from the 'ws' package
 import { db } from '../FirebaseConfig.js' // Importing Firestore database configuration
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore' // Import necessary Firestore functions
+import { doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore' // Import necessary Firestore functions
+
+// Function to get data from a document
+const getDocumentData = async (docRef) => {
+  try {
+    const docSnap = await getDoc(docRef)
+    if (docSnap.exists()) {
+      return docSnap.data()
+    } else {
+      console.error(`No such document: ${docRef.path}`)
+      return null
+    }
+  } catch (error) {
+    console.error(`Error getting document: ${docRef.path}`, error)
+    return null
+  }
+}
 
 // Function to start the WebSocket server
 export const startWebSocketMessagesServer = (server) => {
@@ -14,11 +30,11 @@ export const startWebSocketMessagesServer = (server) => {
     // Event listener for receiving a message from the client
     ws.on('message', async (message) => {
       try {
-        // Parse the received message, expecting a JSON string with chatID, text, and senderId
-        const { chatID, text, senderId } = JSON.parse(message)
+        // Parse the received message, expecting a JSON string with chatID, text, senderId, and RecieverID
+        const { chatID, text, senderId, RecieverID } = JSON.parse(message)
         console.log(`Received message from ${senderId} for chat ID: ${chatID}`)
 
-        // Reference to the specific document in the 'Chats' collection for this chatID
+        // Reference to the specific document in the 'userchats' collection for this chatID
         const chatDocRef = doc(db, 'userchats', chatID)
 
         // Update the document by pushing the new message to the messages array
@@ -30,10 +46,42 @@ export const startWebSocketMessagesServer = (server) => {
           }),
         })
 
+        // References to the sender and receiver documents
+        const SenderSideRef = doc(db, 'Chats', senderId)
+        const RecieverSideRef = doc(db, 'Chats', RecieverID)
+
+        // Perform updates for sender and receiver
+        await Promise.all([
+          updateDoc(SenderSideRef, {
+            LastMessage: text,
+            UpdatedAt: new Date(),
+          }),
+          updateDoc(RecieverSideRef, {
+            LastMessage: text,
+            UpdatedAt: new Date(),
+          }),
+        ])
+
+        // Get updated data from all documents
+        const [chatData, senderData, receiverData] = await Promise.all([
+          getDocumentData(chatDocRef),
+          getDocumentData(SenderSideRef),
+          getDocumentData(RecieverSideRef),
+        ])
+
         // Broadcast the new message to all connected clients
         wss.clients.forEach((client) => {
           if (client !== ws && client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ chatID, senderId, text }))
+            client.send(
+              JSON.stringify({
+                chatID,
+                senderId,
+                text,
+                chatData,
+                senderData,
+                receiverData,
+              })
+            )
           }
         })
 
@@ -41,7 +89,9 @@ export const startWebSocketMessagesServer = (server) => {
         ws.send(
           JSON.stringify({
             success: true,
-            message: 'Message received and broadcasted',
+            chatData,
+            senderData,
+            receiverData,
           })
         )
       } catch (error) {
