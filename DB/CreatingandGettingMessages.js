@@ -65,8 +65,8 @@ export const startWebSocketMessagesServer = (server) => {
         // Get updated data from all documents
         const [chatData, senderData, receiverData] = await Promise.all([
           getDocumentData(chatDocRef),
-          getDocumentData(SenderSideRef),
-          getDocumentData(RecieverSideRef),
+          //   getDocumentData(SenderSideRef),
+          //   getDocumentData(RecieverSideRef),
         ])
 
         // Broadcast the new message to all connected clients
@@ -90,8 +90,8 @@ export const startWebSocketMessagesServer = (server) => {
           JSON.stringify({
             success: true,
             chatData,
-            senderData,
-            receiverData,
+            // senderData,
+            // receiverData,
           })
         )
       } catch (error) {
