@@ -1,48 +1,58 @@
 import {
-  arrayUnion,
   collection,
   doc,
   setDoc,
   updateDoc,
+  serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../../../FirebaseConfig.js'
 export const CreateChat = async (req, res) => {
   try {
-    const { ChatID, CurrentChatID } = req.body
-    // Check if ChatID is provided in the request body
-    if (!ChatID) {
-      return res.status(400).json({ error: 'ChatID is required' })
+    // Extracting userId and receiverId from the request body
+    const { userId, receiverId } = req.body
+
+    // Check if userId is provided in the request body
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' })
     }
-    const Chatref = collection(db, 'userchats')
-    const Userchatef = collection(db, 'Chats')
-    const newChatref = doc(Chatref)
-    // Create a new chat document
-    await setDoc(newChatref, {
+
+    // Reference to the 'userchats' collection in Firestore
+    const userChatsCollection = collection(db, 'userchats')
+    // Reference to the 'Chats' collection in Firestore
+    const chatsCollection = collection(db, 'Chats')
+
+    // Create a new document reference in the 'userchats' collection
+    const newChatDocRef = doc(userChatsCollection)
+
+    // Create a new chat document with initial data
+    await setDoc(newChatDocRef, {
       createdAt: serverTimestamp(),
-      messages: [],
+      messages: [], // Initialize with an empty array for messages
     })
-    // Update the user's chat document with the new chat reference
-    await updateDoc(doc(Userchatef, ChatID), {
-      Chats: arrayUnion({
-        chatID: newChatref.id,
-        LastMessage: '',
-        receiverId: CurrentChatID,
-        UpdatedAt: new Date().toLocaleString(),
-      }),
+
+    // Update the 'Chats' document for the user with userId
+    await updateDoc(doc(chatsCollection, userId), {
+      chatID: newChatDocRef.id,
+      LastMessage: '',
+      receiverId: receiverId,
+      UpdatedAt: new Date().toLocaleString(),
     })
-    await updateDoc(doc(Userchatef, CurrentChatID), {
-      Chats: arrayUnion({
-        chatID: newChatref.id,
-        LastMessage: '',
-        receiverId: ChatID,
-        UpdatedAt: new Date().toLocaleString(),
-      }),
+
+    // Update the 'Chats' document for the user with receiverId
+    await updateDoc(doc(chatsCollection, receiverId), {
+      chatID: newChatDocRef.id,
+      LastMessage: '',
+      receiverId: userId,
+      UpdatedAt: new Date().toLocaleString(),
     })
+
     // Send a successful response with the new chat ID
-    res
-      .status(200)
-      .json({ chatID: newChatref.id, message: 'Chat created successfully' })
-    console.log('Chat created:', newChatref.id)
+    res.status(200).json({
+      chatID: newChatDocRef.id,
+      message: 'Chat created successfully',
+    })
+
+    console.log('Chat created:', newChatDocRef.id)
   } catch (error) {
     console.error('Error creating chat:', error)
     res.status(500).json({ error: 'Internal server error' })
