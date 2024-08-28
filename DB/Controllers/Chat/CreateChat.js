@@ -4,13 +4,14 @@ import {
   setDoc,
   updateDoc,
   serverTimestamp,
+  arrayUnion, // Ensure correct import from 'firebase/firestore'
 } from 'firebase/firestore'
 import { db } from '../../../FirebaseConfig.js'
+
 export const CreateChat = async (req, res) => {
   try {
     // Extracting userId and receiverId from the request body
     const { userId, receiverId } = req.body
-
     // Check if userId is provided in the request body
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' })
@@ -32,18 +33,22 @@ export const CreateChat = async (req, res) => {
 
     // Update the 'Chats' document for the user with userId
     await updateDoc(doc(chatsCollection, userId), {
-      chatID: newChatDocRef.id,
-      LastMessage: '',
-      receiverId: receiverId,
-      UpdatedAt: new Date().toLocaleString(),
+      chats: arrayUnion({
+        chatID: newChatDocRef.id,
+        LastMessage: '',
+        receiverId: receiverId,
+        UpdatedAt: new Date().toLocaleString(),
+      }),
     })
 
     // Update the 'Chats' document for the user with receiverId
     await updateDoc(doc(chatsCollection, receiverId), {
-      chatID: newChatDocRef.id,
-      LastMessage: '',
-      receiverId: userId,
-      UpdatedAt: new Date().toLocaleString(),
+      chats: arrayUnion({
+        chatID: newChatDocRef.id,
+        LastMessage: '',
+        receiverId: userId,
+        UpdatedAt: new Date().toLocaleString(),
+      }),
     })
 
     // Send a successful response with the new chat ID
