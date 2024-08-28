@@ -1,17 +1,16 @@
-import { db } from '../FirebaseConfig.js'
+import { db } from '../../../FirebaseConfig.js'
 import { collection, doc, getDoc } from 'firebase/firestore'
 export const GetChats = async (req, res) => {
-  const { userId } = req.body
+  const { userId } = req.query
   try {
     console.log(`Fetching chats for user ID: ${userId}`)
-
     // Reference to the user's chat document in the 'Chats' collection
     const chatDocRef = doc(collection(db, 'Chats'), userId)
     const chatDocSnap = await getDoc(chatDocRef)
 
     if (chatDocSnap.exists()) {
       // Retrieve chat data
-      const chatItems = chatDocSnap.data()
+      const chatItems = chatDocSnap.data().chats || []
 
       // Fetch user data for each chat item
       const chatData = await Promise.all(
@@ -33,7 +32,6 @@ export const GetChats = async (req, res) => {
           }
         })
       )
-
       // Send the chat data as response
       res.json({ chatData })
     } else {
