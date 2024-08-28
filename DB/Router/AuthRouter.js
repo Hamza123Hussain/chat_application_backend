@@ -5,7 +5,7 @@ import { Login } from '../Controllers/Auth/Login.js'
 import { Signout } from '../Controllers/Auth/Signout.js'
 const upload = multer({ storage: multer.memoryStorage() })
 const AuthRouter = express.Router()
-AuthRouter.post('/Register', Register)
+AuthRouter.post('/Register', upload.single('File'), Register)
 AuthRouter.post('/Login', Login)
 AuthRouter.get('/SignOut', Signout)
 export default AuthRouter

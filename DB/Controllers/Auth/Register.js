@@ -11,21 +11,21 @@ export const Register = async (req, res) => {
       password
     )
     if (userCredential) {
-      // let fileURL = ''
-      // if (req.file) {
-      //   const fileRef = ref(
-      //     storage,
-      //     `users/${userCredential.user.uid}/${req.file.originalname}`
-      //   )
-      //   await uploadBytes(fileRef, req.file.buffer)
-      //   fileURL = await getDownloadURL(fileRef)
-      // }
+      let fileURL = ''
+      if (req.file) {
+        const fileRef = ref(
+          storage,
+          `users/${userCredential.user.uid}/${req.file.originalname}`
+        )
+        await uploadBytes(fileRef, req.file.buffer)
+        fileURL = await getDownloadURL(fileRef)
+      }
       await setDoc(doc(db, 'Users', userCredential.user.uid), {
         Name,
         Email: email,
         id: userCredential.user.uid,
         Blocked: [],
-        // FileURL: fileURL,
+        FileURL: fileURL,
       })
       await setDoc(doc(db, 'Chats', userCredential.user.uid), { chats: [] })
       res.status(200).send('User registered successfully')
