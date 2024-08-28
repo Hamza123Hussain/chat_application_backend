@@ -1,34 +1,40 @@
 import express from 'express'
-import cors from 'cors'
-import { Port1, Port2 } from './Config.js'
+import http from 'http'
+import { Server as SocketIOServer } from 'socket.io'
+import { Port1 } from './Config.js'
 import AuthRouter from './DB/Router/AuthRouter.js'
 import UserRouter from './DB/Router/UserRouter.js'
 import ChatRouter from './DB/Router/ChatRouter.js'
-const App = express()
-App.use(cors())
-App.use(express.json())
-App.use('/api/Auth', AuthRouter)
-App.use('/api/User', UserRouter)
-App.use('/api/Chats', ChatRouter)
-App.listen(Port1, () => {
-  console.log(
-    `App and Chat WebSocket server running on http://localhost:${Port1}`
-  )
+import { CreateMssage } from './DB/Controllers/User/CreatingandGettingMessages.js'
+
+const app = express()
+const server = http.createServer(app)
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
 })
 
-// Create an HTTP server for the Express app and the chat WebSocket server
-// const appServer = http.createServer(App)
-// // Create a separate HTTP server for the messages WebSocket server
-// const messagesServer = http.createServer()
-// // Start the WebSocket servers
-// startWebSocketServer(appServer) // Attach to the app server
-// startWebSocketMessagesServer(messagesServer) // Separate server for messages
-// // Start the servers
-// appServer.listen(Port1, () => {
-//   console.log(
-//     `App and Chat WebSocket server running on http://localhost:${Port1}`
-//   )
-// })
-// messagesServer.listen(Port2, () => {
-//   console.log(`Messages WebSocket server running on http://localhost:${Port2}`)
-// })
+app.use(express.json())
+app.use('/api/Auth', AuthRouter)
+app.use('/api/User', UserRouter)
+app.use('/api/Chats', ChatRouter)
+
+io.on('connection', (socket) => {
+  console.log('a user connected')
+
+  socket.on('disconnect', () => {
+    console.log('user disconnected')
+  })
+})
+
+server.listen(Port1, () => {
+  console.log(`App and WebSocket server running on http://localhost:${Port1}`)
+})
+
+// Integrate the message creation handler with Socket.IO
+app.post('/api/User/NewMessage', async (req, res) => {
+  await CreateMssage(req, res, io)
+})
+app.get('/api/Chats/GetChatList', (req, res) => GetChats(req, res, io))
