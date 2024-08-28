@@ -1,7 +1,7 @@
 import { arrayUnion, doc, updateDoc, getDoc } from 'firebase/firestore'
 import { db } from '../../../FirebaseConfig.js'
 
-export const CreateMssage = async (req, res) => {
+export const CreateMssage = async (req, res, io) => {
   try {
     const { chatID, text, senderId, receiverId } = req.body
 
@@ -61,6 +61,15 @@ export const CreateMssage = async (req, res) => {
         chats: updateChatArray(receiverChats, chatID, text),
       }),
     ])
+
+    // Emit a message event to all connected clients
+    io.emit('message', {
+      chatID,
+      senderId,
+      receiverId,
+      text,
+      timestamp: new Date(),
+    })
 
     // Send a successful response
     res
