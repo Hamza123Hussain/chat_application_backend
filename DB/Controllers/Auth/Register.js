@@ -27,7 +27,7 @@ export const Register = async (req, res) => {
         Blocked: [],
         // FileURL: fileURL,
       })
-      await setDoc(doc(db, 'Chats', userCredential.user.uid))
+      await setDoc(doc(db, 'Chats', userCredential.user.uid), { chats: [] })
       res.status(200).send('User registered successfully')
     }
   } catch (error) {
