@@ -1,5 +1,6 @@
 import { signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '../../FirebaseConfig.js'
+import { auth } from '../../../FirebaseConfig.js'
+
 export const Login = async (req, res) => {
   const { inputVal } = req.body
   try {
