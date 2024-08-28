@@ -1,4 +1,4 @@
-import { arrayUnion, doc, updateDoc } from 'firebase/firestore'
+import { arrayUnion, doc, updateDoc, getDoc } from 'firebase/firestore'
 import { db } from '../../../FirebaseConfig.js'
 
 export const CreateMssage = async (req, res) => {
@@ -26,25 +26,50 @@ export const CreateMssage = async (req, res) => {
     const senderDocumentRef = doc(db, 'Chats', senderId)
     const receiverDocumentRef = doc(db, 'Chats', receiverId)
 
-    // Perform updates for sender and receiver documents
+    // Get the current chat data for both sender and receiver
+    const [senderDocSnap, receiverDocSnap] = await Promise.all([
+      getDoc(senderDocumentRef),
+      getDoc(receiverDocumentRef),
+    ])
+
+    if (!senderDocSnap.exists() || !receiverDocSnap.exists()) {
+      return res.status(404).json({ error: 'Chat data not found' })
+    }
+
+    const senderChats = senderDocSnap.data().chats || []
+    const receiverChats = receiverDocSnap.data().chats || []
+
+    // Function to update the chat array with the latest message
+    const updateChatArray = (chats, chatID, lastMessage) => {
+      return chats.map((chat) =>
+        chat.chatID === chatID
+          ? {
+              ...chat,
+              LastMessage: lastMessage,
+              UpdatedAt: new Date().toLocaleString(),
+            }
+          : chat
+      )
+    }
+
+    // Update the chats for sender and receiver
     await Promise.all([
       updateDoc(senderDocumentRef, {
-        LastMessage: text,
-        UpdatedAt: new Date(), // Update the timestamp
+        chats: updateChatArray(senderChats, chatID, text),
       }),
       updateDoc(receiverDocumentRef, {
-        LastMessage: text,
-        UpdatedAt: new Date(), // Update the timestamp
+        chats: updateChatArray(receiverChats, chatID, text),
       }),
     ])
 
-    // Get updated data from the chat document
-    const chatData = true
-
-    return res.status(200).json(chatData)
+    // Send a successful response
+    res
+      .status(200)
+      .json({ message: 'Message created and chats updated successfully' })
+    console.log('Message created and chats updated successfully')
   } catch (error) {
     console.error('Error creating message:', error)
-    return res
+    res
       .status(500)
       .json({ error: 'Internal server error', details: error.message })
   }
