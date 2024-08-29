@@ -1,7 +1,7 @@
 import { db } from '../../../FirebaseConfig.js'
 import { collection, doc, getDoc } from 'firebase/firestore'
 
-export const GetChats = async (userId) => {
+export const GetUserList = async (userId) => {
   try {
     console.log(`Fetching chats for user ID: ${userId}`)
     // Reference to the user's chat document in the 'Chats' collection
