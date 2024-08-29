@@ -1,7 +1,7 @@
 import express from 'express'
 import { GetUser } from '../Controllers/User/GettingUserDetails.js'
 import { SearchUser } from '../Controllers/User/SearchUser.js'
-import { CreateMssage } from '../Controllers/User/CreatingandGettingMessages.js'
+import { CreateMssage } from '../Controllers/User/SendingMessage.js'
 
 const UserRouter = express.Router()
 UserRouter.get('/GetUser', GetUser)
