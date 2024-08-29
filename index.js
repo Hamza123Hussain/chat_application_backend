@@ -7,8 +7,8 @@ import { Port1 } from './Config.js'
 import AuthRouter from './DB/Router/AuthRouter.js'
 import UserRouter from './DB/Router/UserRouter.js'
 import ChatRouter from './DB/Router/ChatRouter.js'
-import { CreateMssage } from './DB/Controllers/User/CreatingandGettingMessages.js'
-import { GetChats } from './DB/Controllers/Chat/GettingChatList.js'
+import { GetUserList } from './DB/Controllers/Chat/GettingChatList.js'
+import { GetChat } from './DB/Controllers/Chat/GetChat.js'
 
 const app = express()
 app.use(cors())
@@ -25,25 +25,33 @@ const io = new SocketIOServer(server, {
 app.use('/api/Auth', AuthRouter)
 app.use('/api/User', UserRouter)
 app.use('/api/Chats', ChatRouter)
-
 io.on('connection', (socket) => {
   console.log('a user connected')
-  io.on('UserAdded', async (userId) => {
-    await GetChats(userId)
+
+  socket.on('UserList', async (userId) => {
+    console.log(`Received UserList with userId: ${userId}`)
+    try {
+      const chatData = await GetUserList(userId)
+      socket.emit('UserListReceived', chatData)
+    } catch (error) {
+      console.error('Error fetching user list:', error)
+    }
+  })
+
+  socket.on('Chat', async (ChatID) => {
+    console.log(`Received Chat with ChatID: ${ChatID}`)
+    try {
+      const chatData = await GetChat(ChatID)
+      io.emit('ChatData', chatData)
+    } catch (error) {
+      console.error('Error fetching chat data:', error)
+    }
   })
 
   socket.on('disconnect', () => {
     console.log('user disconnected')
   })
 })
-
-// app.post('/api/User/NewMessage', async (req, res) => {
-//   await CreateMssage(req, res, io)
-// })
-
-// app.get('/api/Chats/GetChatList', (req, res) => {
-//   GetChats(req, res, io) // Pass io here
-// })
 
 server.listen(Port1, () => {
   console.log(`App and WebSocket server running on http://localhost:${Port1}`)
