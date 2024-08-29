@@ -4,35 +4,50 @@ import {
   setDoc,
   updateDoc,
   serverTimestamp,
-  arrayUnion, // Ensure correct import from 'firebase/firestore'
+  arrayUnion,
+  getDoc,
 } from 'firebase/firestore'
 import { db } from '../../../FirebaseConfig.js'
-
 export const CreateChat = async (req, res) => {
   try {
-    // Extracting userId and receiverId from the request body
     const { userId, receiverId } = req.body
-    // Check if userId is provided in the request body
-    if (!userId) {
-      return res.status(400).json({ error: 'userId is required' })
+    if (!userId || !receiverId) {
+      return res
+        .status(400)
+        .json({ error: 'userId and receiverId are required' })
     }
-
-    // Reference to the 'userchats' collection in Firestore
-    const userChatsCollection = collection(db, 'userchats')
     // Reference to the 'Chats' collection in Firestore
     const chatsCollection = collection(db, 'Chats')
-
-    // Create a new document reference in the 'userchats' collection
-    const newChatDocRef = doc(userChatsCollection)
-
-    // Create a new chat document with initial data
+    // Query to find if there's an existing chat between userId and receiverId
+    const userChatsRef = doc(chatsCollection, userId)
+    const receiverChatsRef = doc(chatsCollection, receiverId)
+    const userChatsDoc = await getDoc(userChatsRef)
+    const receiverChatsDoc = await getDoc(receiverChatsRef)
+    if (userChatsDoc.exists() && receiverChatsDoc.exists()) {
+      const userChats = userChatsDoc.data().chats || []
+      const receiverChats = receiverChatsDoc.data().chats || []
+      // Check if a chat already exists in either user's chat list
+      const chatExists =
+        userChats.some((chat) => chat.receiverId === receiverId) ||
+        receiverChats.some((chat) => chat.receiverId === userId)
+      if (chatExists) {
+        const existingChat =
+          userChats.find((chat) => chat.receiverId === receiverId) ||
+          receiverChats.find((chat) => chat.receiverId === userId)
+        return res.status(200).json({
+          chatID: existingChat.chatID,
+          message: 'Chat already exists',
+        })
+      }
+    }
+    // Create a new chat document
+    const newChatDocRef = doc(collection(db, 'userchats'))
     await setDoc(newChatDocRef, {
       createdAt: serverTimestamp(),
       messages: [], // Initialize with an empty array for messages
     })
-
     // Update the 'Chats' document for the user with userId
-    await updateDoc(doc(chatsCollection, userId), {
+    await updateDoc(userChatsRef, {
       chats: arrayUnion({
         chatID: newChatDocRef.id,
         LastMessage: '',
@@ -40,9 +55,8 @@ export const CreateChat = async (req, res) => {
         UpdatedAt: new Date().toLocaleString(),
       }),
     })
-
     // Update the 'Chats' document for the user with receiverId
-    await updateDoc(doc(chatsCollection, receiverId), {
+    await updateDoc(receiverChatsRef, {
       chats: arrayUnion({
         chatID: newChatDocRef.id,
         LastMessage: '',
@@ -50,13 +64,10 @@ export const CreateChat = async (req, res) => {
         UpdatedAt: new Date().toLocaleString(),
       }),
     })
-
-    // Send a successful response with the new chat ID
     res.status(200).json({
       chatID: newChatDocRef.id,
       message: 'Chat created successfully',
     })
-
     console.log('Chat created:', newChatDocRef.id)
   } catch (error) {
     console.error('Error creating chat:', error)
