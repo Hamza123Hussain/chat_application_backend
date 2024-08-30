@@ -9,6 +9,7 @@ export const CreateMssage = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' })
     }
     let FileURL = ''
+    // If a file is provided, upload it to Firebase Storage
     if (req.file) {
       const FileRef = ref(
         storage,
@@ -17,6 +18,14 @@ export const CreateMssage = async (req, res) => {
       await uploadBytes(FileRef, req.file.buffer)
       FileURL = await getDownloadURL(FileRef)
     }
+    // Fetch user data using senderId
+    const userDocRef = doc(db, 'Users', senderId)
+    const userDocSnap = await getDoc(userDocRef)
+    if (!userDocSnap.exists()) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+    // Retrieve user data from document
+    const { Email, FileURL: userFileURL, Name } = userDocSnap.data()
     // Reference to the chat document
     const chatDocumentRef = doc(db, 'userchats', chatID)
     // Update the document by pushing the new message to the messages array
@@ -26,6 +35,9 @@ export const CreateMssage = async (req, res) => {
         text,
         timestamp: new Date(), // Add a timestamp for the message
         MessageImage: FileURL ? FileURL : '',
+        Email,
+        UserProfileImage: userFileURL,
+        Name,
       }),
     })
     // References to the sender and receiver documents in the 'Chats' collection
