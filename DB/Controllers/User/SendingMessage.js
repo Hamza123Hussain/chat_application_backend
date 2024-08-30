@@ -1,11 +1,21 @@
 import { arrayUnion, doc, updateDoc, getDoc } from 'firebase/firestore'
-import { db } from '../../../FirebaseConfig.js'
+import { db, storage } from '../../../FirebaseConfig.js'
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 export const CreateMssage = async (req, res) => {
   try {
     const { chatID, text, senderId, receiverId } = req.body
     // Validate required fields
     if (!chatID || !text || !senderId || !receiverId) {
       return res.status(400).json({ error: 'Missing required fields' })
+    }
+    let FileURL = ''
+    if (req.file) {
+      const FileRef = ref(
+        storage,
+        `Messages/${chatID}/${req.file.originalname}`
+      )
+      await uploadBytes(FileRef, req.file.buffer)
+      FileURL = await getDownloadURL(FileRef)
     }
     // Reference to the chat document
     const chatDocumentRef = doc(db, 'userchats', chatID)
@@ -15,6 +25,7 @@ export const CreateMssage = async (req, res) => {
         senderId,
         text,
         timestamp: new Date(), // Add a timestamp for the message
+        MessageImage: FileURL ? FileURL : '',
       }),
     })
     // References to the sender and receiver documents in the 'Chats' collection
