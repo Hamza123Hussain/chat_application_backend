@@ -1,4 +1,3 @@
-// In your main server file (e.g., index.js)
 import express from 'express'
 import http from 'http'
 import { Server as SocketIOServer } from 'socket.io'
@@ -9,11 +8,9 @@ import UserRouter from './DB/Router/UserRouter.js'
 import ChatRouter from './DB/Router/ChatRouter.js'
 import { GetUserList } from './DB/Controllers/Chat/GettingChatList.js'
 import { GetChat } from './DB/Controllers/Chat/GetChat.js'
-
 const app = express()
 app.use(cors())
 app.use(express.json())
-
 const server = http.createServer(app)
 const io = new SocketIOServer(server, {
   cors: {
@@ -21,13 +18,11 @@ const io = new SocketIOServer(server, {
     methods: ['GET', 'POST'],
   },
 })
-
 app.use('/api/Auth', AuthRouter)
 app.use('/api/User', UserRouter)
 app.use('/api/Chats', ChatRouter)
 io.on('connection', (socket) => {
   console.log('a user connected')
-
   socket.on('UserList', async (userId) => {
     console.log(`Received UserList with userId: ${userId}`)
     try {
@@ -37,7 +32,6 @@ io.on('connection', (socket) => {
       console.error('Error fetching user list:', error)
     }
   })
-
   socket.on('Chat', async (ChatID) => {
     console.log(`Received Chat with ChatID: ${ChatID}`)
     try {
@@ -47,12 +41,10 @@ io.on('connection', (socket) => {
       console.error('Error fetching chat data:', error)
     }
   })
-
   socket.on('disconnect', () => {
     console.log('user disconnected')
   })
 })
-
 server.listen(Port1, () => {
   console.log(`App and WebSocket server running on http://localhost:${Port1}`)
 })
