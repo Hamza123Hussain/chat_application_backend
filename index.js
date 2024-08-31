@@ -9,7 +9,12 @@ import ChatRouter from './DB/Router/ChatRouter.js'
 import { GetUserList } from './DB/Controllers/Chat/GettingChatList.js'
 import { GetChat } from './DB/Controllers/Chat/GetChat.js'
 const app = express()
-app.use(cors())
+const corsOptions = {
+  origin: true, // Allow all origins https://notes-app-node-next-9x72.vercel.app/
+  optionsSuccessStatus: 200, // For legacy browser support
+}
+
+app.use(cors(corsOptions))
 app.use(express.json())
 const server = http.createServer(app)
 const io = new SocketIOServer(server, {
