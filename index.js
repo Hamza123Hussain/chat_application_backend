@@ -1,15 +1,13 @@
-// index.js
-
 import express from 'express'
 import http from 'http'
 import { Server as SocketIOServer } from 'socket.io'
 import cors from 'cors'
+import { Port1 } from './Config.js'
 import AuthRouter from './DB/Router/AuthRouter.js'
 import UserRouter from './DB/Router/UserRouter.js'
 import ChatRouter from './DB/Router/ChatRouter.js'
 import { GetUserList } from './DB/Controllers/Chat/GettingChatList.js'
 import { GetChat } from './DB/Controllers/Chat/GetChat.js'
-import { Port1 } from './Config.js'
 
 const app = express()
 
@@ -46,7 +44,6 @@ io.on('connection', (socket) => {
       socket.emit('UserListReceived', chatData)
     } catch (error) {
       console.error('Error fetching user list:', error)
-      socket.emit('error', 'Error fetching user list')
     }
   })
 
@@ -58,18 +55,12 @@ io.on('connection', (socket) => {
       io.emit('ChatData', chatData)
     } catch (error) {
       console.error('Error fetching chat data:', error)
-      socket.emit('error', 'Error fetching chat data')
     }
   })
 
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log('User disconnected')
-  })
-
-  // Error handling for connection
-  socket.on('connect_error', (error) => {
-    console.error('Socket.IO connection error:', error)
   })
 })
 
@@ -78,12 +69,7 @@ app.use('/api/Auth', AuthRouter)
 app.use('/api/User', UserRouter)
 app.use('/api/Chats', ChatRouter)
 
-// Export the server handler
-export default server
-
-// Listen on the port provided by Vercel or default to 3000
-server.listen(Port1 || 3000, () => {
-  console.log(
-    `App and WebSocket server running on port ${process.env.PORT || 3000}`
-  )
+// Start the server
+server.listen(Port1, () => {
+  console.log(`App and WebSocket server running on http://localhost:${Port1}`)
 })
