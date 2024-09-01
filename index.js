@@ -44,6 +44,7 @@ io.on('connection', (socket) => {
       socket.emit('UserListReceived', chatData)
     } catch (error) {
       console.error('Error fetching user list:', error)
+      socket.emit('error', 'Error fetching user list')
     }
   })
 
@@ -55,12 +56,18 @@ io.on('connection', (socket) => {
       io.emit('ChatData', chatData)
     } catch (error) {
       console.error('Error fetching chat data:', error)
+      socket.emit('error', 'Error fetching chat data')
     }
   })
 
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log('User disconnected')
+  })
+
+  // Error handling for connection
+  socket.on('connect_error', (error) => {
+    console.error('Socket.IO connection error:', error)
   })
 })
 
