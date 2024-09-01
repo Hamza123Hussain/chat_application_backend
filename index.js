@@ -8,26 +8,35 @@ import UserRouter from './DB/Router/UserRouter.js'
 import ChatRouter from './DB/Router/ChatRouter.js'
 import { GetUserList } from './DB/Controllers/Chat/GettingChatList.js'
 import { GetChat } from './DB/Controllers/Chat/GetChat.js'
+
 const app = express()
+
+// CORS configuration
 const corsOptions = {
-  origin: true, // Allow all origins https://notes-app-node-next-9x72.vercel.app/
-  optionsSuccessStatus: 200, // For legacy browser support
+  origin: '*', // Adjust according to your deployment needs
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type'],
 }
 
 app.use(cors(corsOptions))
 app.use(express.json())
+
+// Create HTTP server
 const server = http.createServer(app)
+
+// Initialize Socket.IO server
 const io = new SocketIOServer(server, {
   cors: {
-    origin: '*',
+    origin: '*', // Adjust according to your deployment needs
     methods: ['GET', 'POST'],
   },
 })
-app.use('/api/Auth', AuthRouter)
-app.use('/api/User', UserRouter)
-app.use('/api/Chats', ChatRouter)
+
+// Socket.IO event handling
 io.on('connection', (socket) => {
-  console.log('a user connected')
+  console.log('A user connected')
+
+  // Handle UserList event
   socket.on('UserList', async (userId) => {
     console.log(`Received UserList with userId: ${userId}`)
     try {
@@ -37,19 +46,30 @@ io.on('connection', (socket) => {
       console.error('Error fetching user list:', error)
     }
   })
-  socket.on('Chat', async (ChatID) => {
-    console.log(`Received Chat with ChatID: ${ChatID}`)
+
+  // Handle Chat event
+  socket.on('Chat', async (chatID) => {
+    console.log(`Received Chat with ChatID: ${chatID}`)
     try {
-      const chatData = await GetChat(ChatID)
+      const chatData = await GetChat(chatID)
       io.emit('ChatData', chatData)
     } catch (error) {
       console.error('Error fetching chat data:', error)
     }
   })
+
+  // Handle disconnection
   socket.on('disconnect', () => {
-    console.log('user disconnected')
+    console.log('User disconnected')
   })
 })
+
+// Set up routes
+app.use('/api/Auth', AuthRouter)
+app.use('/api/User', UserRouter)
+app.use('/api/Chats', ChatRouter)
+
+// Start the server
 server.listen(Port1, () => {
   console.log(`App and WebSocket server running on http://localhost:${Port1}`)
 })
